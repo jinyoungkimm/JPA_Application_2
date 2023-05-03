@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 @RestController // @Controller + @ResponseBody
 @RequiredArgsConstructor
@@ -88,5 +91,44 @@ public class MemberApiController { // Rest API용 Controller이다(여기서는 
 
     }
 
+
+    @GetMapping("/api/v1/members")
+    public List<Member> membersV1(){ //[회원 조회]용 Rest API - 1
+
+        return memberService.findMembers(); // [도메인 엔티티]를 반환! ( memberV2()에서 개선할 예정 )
+                                            // 그리고 컬렉션(List<Member>)를 [직접] 반환하고 있다.
+    }
+
+    @GetMapping("api/v2/members")
+    public Result membersV2(){ //[회원 조회]용 Rest API - 2
+
+        List<Member> findmembers = memberService.findMembers();
+
+        //1] findMembers 컬렉션을 Rest API 스펙에 맞게 [MemberDTO 컬렉션]으로 변환
+        List<MemberDTO> memberDTO = findmembers.stream()
+                .map(m -> new MemberDTO(m.getName()))
+                .collect(Collectors.toList());
+        // 2] [MemberDTO 컬렉션]을 Result 클래스의 필드값으로 넘겨서 반환함으로서, 컬렉션을 [직접] 반환하는 것이 아닌,
+        // Result 객체의 필드값으로[간접적]으로 컬렉션을 넘김.
+        // 즉, 컬렉션을 한 번 Wrapping을 해서, 넘겨야 한다.
+        return new Result(memberDTO);
+
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class Result<T>{
+
+        private T data; // Rest API를 호출한 개발자의 화면에는 "data" : "[회원 목록1,2,3,,,,,n]" 형태로 보여질 것이다.
+                    // https://jbluke.tistory.com/411 사이트를 참조하면 보여지는 화면의 차이점인지 파악 가능할 것이다.
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class MemberDTO{ // Rest API의 스펙!
+
+        private String name; // Member의 name만을 반환!
+
+    }
 
 }
