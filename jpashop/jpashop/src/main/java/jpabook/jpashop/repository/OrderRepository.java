@@ -111,4 +111,15 @@ public class OrderRepository {  //Order 객체에 대한 Repository
         }
         return query.getResultList();
     }
+
+    public List<Order> findAllWithMemberDelivery() {
+
+        //Fetch Join 사용하여 1번의 SQL문으로 [Member + Deliver] 조회
+        List<Order> resultList = entityManager.createQuery(
+                        "select o from Order o join fetch o.member m join fetch o.delivery d"
+                        , Order.class)
+                .getResultList();
+
+        return resultList;
+    }
 }
