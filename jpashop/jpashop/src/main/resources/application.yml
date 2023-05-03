@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none #[회원 조회] API 개발 시, DB Table이 초기화 되면 안되니, create -> none으로 잠시 바꿔 놓는다고 함.
+      ddl-auto: create
     properties:
       hibernate:
         show_sql: true
