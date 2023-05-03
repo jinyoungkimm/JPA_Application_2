@@ -1,0 +1,23 @@
+spring:
+#  datasource:
+#    url: jdbc:h2:mem:test #메모리 H2 DB
+#    username: sa
+#    password:
+#    driver-class-name: org.h2.Driver
+#  output:
+#    ansi:
+#      enabled: always
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: create
+#    properties:
+#      hibernate:
+#        show_sql: true
+#        format_sql: true
+#SPRING BOOT를 사용하면 위 설정을 모두 하지 않아도 메모리 H2 DB를 사용할 수가 있다.
+#그리고 테스트 용 DB는 개발용 DB와 위와 같이 독립시켜서 하는 것이 맞다.
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace

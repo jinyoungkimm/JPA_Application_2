@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<!-- [th:~~]로 시작하는 건 전부 thymeleaf 문법 -->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!--th:replace="fragments/header :: header"은 th:replace를 보면 알 수 있듯이, 일종의 헤더 파일이라고 생각하면 된다.
+ templates.fragments에 header.html이 있다(fragments/header은 대체할 html의 경로를 나타낸다)
+ 그 경로의 html에  th:fragment="header"가 존재하며, 이것으로 식별되는 <head>~~</head>>로 아래의 <head>~~</head> 부분이 대체(replace)된다.-->
+<head th:replace="fragments/header :: header">
+    <title>Hello</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+
+<body>
+<div class="container">
+
+
+    <div th:replace="fragments/bodyHeader :: bodyHeader" /> <!--이 부분도 "header"와 같은 원리로 대치된다. -->
+
+
+    <div class="jumbotron">
+        <h1>HELLO SHOP</h1>
+        <p class="lead">회원 기능</p>
+        <p>
+            <a class="btn btn-lg btn-secondary" href="/members/new">회원 가입</a>
+            <a class="btn btn-lg btn-secondary" href="/members">회원 목록</a>
+        </p>
+        <p class="lead">상품 기능</p>
+        <p>
+            <a class="btn btn-lg btn-dark" href="/items/new">상품 등록</a>
+            <a class="btn btn-lg btn-dark" href="/items">상품 목록</a>
+        </p>
+        <p class="lead">주문 기능</p>
+        <p>
+            <a class="btn btn-lg btn-info" href="/order">상품 주문</a>
+            <a class="btn btn-lg btn-info" href="/orders">주문 내역</a>
+        </p>
+    </div>
+
+
+
+    <div th:replace="fragments/footer :: footer" /><!--이 부분도 "header"와 같은 원리로 대치된다. -->
+
+
+
+</div> <!-- /container -->
+</body>
+</html>
