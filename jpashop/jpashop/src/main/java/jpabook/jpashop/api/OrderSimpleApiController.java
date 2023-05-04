@@ -65,7 +65,7 @@ public class OrderSimpleApiController {
         List<Order> findOrders = orderRepository.findAllByString(new OrderSearch());
 
         //이 과정에서 Lazy로 인한 너무 많은 SQL문이 날라간다. 아래의 SimpleOrderDTO 클래스 참조!
-        // 반복문이 일어날 때마다 Select문이 날라간다(N+1문제).
+        // 반복문이 일어날 때마다 Select문이 날라간다(N+1문제)
         List<SimpleOrderDTO> resultList = findOrders.stream()
                 .map(o -> new SimpleOrderDTO(o))
                 .collect(Collectors.toList());
