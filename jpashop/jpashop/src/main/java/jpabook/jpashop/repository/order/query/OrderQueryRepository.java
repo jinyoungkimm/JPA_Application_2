@@ -113,6 +113,21 @@ public class OrderQueryRepository {
             return result;
     }
 
+    public List<OrderFlatDto> findAllByDto_flat() { // 총 단 1번의 SQL문으로 조회를 할 것이다.
+
+    return entityManager.createQuery(
+            "SELECT" +
+                    " new jpabook.jpashop.repository.order.query." +
+                    "OrderFlatDto(o.id,m.name,o.orderDate,o.orderStatus,d.address,i.name,oi.orderPrice,oi.count)" +
+                    " from Order o" +
+                    " join o.member m" +
+                    " join o.delivery d" +
+                    " join o.orderItems oi" + // 1:다 에 의해서 여기서 [데이터 뻥튀기]가 일어남.(v6를 호출해서 결과 확인해봐라)
+                    " join oi.item i",OrderFlatDto.class)
+            .getResultList();
+
+    }
+
     // 근데, 이런 생각이 들 수도 있다.
     // JPQL로 NEW연산자를 통해 직접 DTO로 변환하는 게 마냥 편하지는 않다는 생각!!!
     // 지금 여태껏 되게 많은 쿼리를 직접 작성하고 있었다. ㅠㅠ

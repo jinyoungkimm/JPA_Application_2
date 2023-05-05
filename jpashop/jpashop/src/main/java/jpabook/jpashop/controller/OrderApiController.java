@@ -7,6 +7,7 @@ import jpabook.jpashop.domain.OrderItem;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.order.query.OrderFlatDto;
 import jpabook.jpashop.repository.order.query.OrderQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryRepository;
 import lombok.Data;
@@ -112,6 +113,13 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
         return orderQueryRepository.findAllByDto_optimization();
 
+
+    }
+
+    @GetMapping("/api/v6/orders")
+    public List<OrderFlatDto> ordersV6() { // V5에서는 총 2번의 SQL문으로 완성하였지만, 여기서는
+                                            // 단 1번의 SQL문으로 같은 결과를 내 보겠다.
+        return orderQueryRepository.findAllByDto_flat();
 
     }
 
