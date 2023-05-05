@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -81,19 +82,28 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
         private Address address;
 
         private List<OrderItemDto> orderItems;// OrderItemDto : 아래에 구현함
+
+        // IN 쿼리를 사용해서,  DB에서 OrderItem 객체 조회해서 옴
+        // default_batch_fetch_size = 10이면
+        // "IN 쿼리 안의 데이터 개수를 10개로 할거다"라는 뜻!
+        // 게시물 428 참조!
         public OrderDto(Order order) {
 
             orderId = order.getId();
 
-            name = order.getMember().getName(); // Lazy 객체 강제 초기화
+            name = order.getMember().getName();
 
             orderDate = order.getOrderDate();
 
             orderStatus = order.getOrderStatus();
 
-            address = order.getDelivery().getAddress(); // Lazy 객체 강제 초기화
+            address = order.getDelivery().getAddress();
 
-            orderItems = order.getOrderItems().stream() // Lazy 객체 강제 초기화
+            // IN 쿼리를 사용해서, DB에서 Item 객체 조회해서 옴
+            //default_batch_fetch_size = 10이면
+            // "IN 쿼리 안의 데이터 개수를 10개로 할거다"라는 뜻!
+            // 게시물 428 참조!
+            orderItems = order.getOrderItems().stream()
                     .map(orderItem -> new OrderItemDto(orderItem))
                     .collect(toList());
         }
@@ -105,7 +115,7 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
         private int count; //주문 수량
         public OrderItemDto(OrderItem orderItem) {
 
-            itemName = orderItem.getItem().getName();  // Lazy 객체 강제 초기화
+            itemName = orderItem.getItem().getName();
 
             orderPrice = orderItem.getOrderPrice();
 
@@ -119,8 +129,8 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
         List<Order> orders = orderRepository.findAllWithItem(); // fetch join을 사용하여 새로 정의한 메서드
 
-       List<OrderDto> result = orders.stream()
 
+       List<OrderDto> result = orders.stream()
                 .map(o->new OrderDto(o))
                 .collect(Collectors.toList());
 
@@ -129,14 +139,16 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
     }
 
     @GetMapping("/api/v3.1/orders")
-    public List<OrderDto> ordersV3_1() { // [1:다] 에서 다(컬렉션) fetch join 시, 생기는 페이지 이슈를 해결
+    public List<OrderDto> ordersV3_1(
+            @RequestParam(value ="offset",defaultValue = "0") int offset,
+            @RequestParam(value= "limit",defaultValue = "100") int limit)
+    {
+        //1] @~ToOne 관계에 있는 객체를 [fetch join]으로 일단 먼저 조회한다.
+        List<Order> orders = orderRepository.findAllWithMemberDelivery(offset,limit);
 
-        List<Order> orders = orderRepository.findAllWithMemberDelivery(); // @~ToOne 관계의 객체만 존재
-        //이거에 대해서, 페이징을 하여도 성능 이슈가 안 생김
-        // 왜냐하면, [1:다] 관계에서와는 달리, DB에서 페이징 처리를 해서 가져오기 때문([데이터 중복]이 없기 때문)!
-
-        //여기서 Order 객체를 다른 객체(OrderItem, Item)에 대한 조회가 일어나는데
-        // Lazy인 관계로 (N+1) 문제 발생생
+        // OrderDto 클래스 내에서 Lazy가 걸린 @ToMany 엔티티(컬렉션)에 대해서
+        // (N + 1) 문제를 일으키지 않고, IN 쿼리로 조회를 1번의 SQL로 함
+        // 구체적인 것은 게시물 428 참조!
        List<OrderDto> result = orders.stream()
                 .map(o->new OrderDto(o))
                 .collect(Collectors.toList());
@@ -144,4 +156,17 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
         return result;
 
     }
+
+    //V3는 SQL문이 총 1번 나가고, V3.1은 SQL문이 총 3번 나간다.
+    //그럼 V3가 더 좋은 것일까??
+    //그렇지만은 않다. V3을 실행해 보고, DB Table을 보면 알겠지만, 중복된 데이터가 너무 많다.
+    //DB는 그 중복된 데이터를 모두 애플리케이션으로 보내야 하므로, 네트워크 비용이 발생한다.
+    //그러나 V3.1은 총 3번의 SQL문이 나가지만 [데이터가 중복없이 최적화] 되어서 나가기 때문에
+    //보내지는 데이터의 총량이 적으므로, 그에 따른 비용 절감이 일어난다.
+
+    // 중복되는 데이터 양이 너~~~~무 많을 때는 V3.1이 좋고
+    // 중복되는 데이터 양이 그렇게 심하게 차이가 나지 않을 때는, 요즘에는 네트워킹이 매우 잘 되었있으므로
+    // 어느 버전으로 해도 별 차이가 없을 것이다.
+    // 그러나 V3에서는 [페이징] 이슈가 생기므로, 일반적으로 V3.1을 사용 권장!
+
 }

@@ -9,10 +9,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aspectj.weaver.ast.Or;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Getter
 @Setter
+@BatchSize(size =  100) // @~ToOne 관계는 필드 내에서 @BatchSize를 사용 못함.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderItem { // 주문한 상품에 대한 클래스(상품을 주문했을 때, 파생되는 데이터들을 정의)
 

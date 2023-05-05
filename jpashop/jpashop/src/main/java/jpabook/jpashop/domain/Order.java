@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.proxy.pojo.bytebuddy.ByteBuddyInterceptor;
 
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ public class Order {
 
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @BatchSize(size = 100) // 컬렉션, 즉 @~ToMany일 때는, 이와 같이 바로 위에 @Batchsize 적을 수 있음.
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.ALL)

@@ -15,8 +15,10 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-
-logging:
+        default_batch_fetch_size: 100 # Lazy가 걸려있으면서, @~ToMany(컬렉션) 걸려 있는 컬렉션(OrderItem)
+                                      #과 Proxy 객체(OrderItem,Item)을 IN 쿼리로 1번의 SQL로 들고옴.
+                                      #default_batch_fetch_size는 "IN 쿼리 안의 데이터 개수를 몇개로 할거냐?"라는 뜻!
+logging:                              # 더 자세한 것은 게시물 참조!
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
