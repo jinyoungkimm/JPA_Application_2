@@ -2,11 +2,14 @@ package jpabook.jpashop.repository.order.query;
 
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -72,5 +75,46 @@ public class OrderQueryRepository {
                 .getResultList();
 
     }
+
+    public List<OrderQueryDto> findAllByDto_optimization() { //findOrderQueryDtos()에서 발생한 (1 + N)문제 해결
+
+
+        List<OrderQueryDto> result = findOrders(); // 1번의 SQL문 날라감.
+
+        List<Long> orderIds = result.stream()
+                .map(o -> o.getOrderId())
+                .collect(Collectors.toList());
+
+        //(1+N) 문제 해결!
+        // -> findOrderQueryDtos()에서처럼, 반복문으로 1개씩 1개씩 가져오지 않고
+        // IN 쿼리를 사용하여, 1번의 SQL문으로 다 들고 온다.
+        List<OrderItemQueryDto> orderItems = entityManager.createQuery(
+
+                        "select" +
+                                " new jpabook.jpashop.repository.order.query." +
+                                "OrderItemQueryDto(oi.order.id, i.name,oi.orderPrice, oi.count)" +
+                                " from OrderItem oi" +
+                                " join oi.item i" +
+                                " where oi.order.id IN :orderIds", OrderItemQueryDto.class)
+                .setParameter("orderIds", orderIds)
+                .getResultList();
+
+            Map<Long, List<OrderItemQueryDto>> map =
+                orderItems.stream()
+                        // OrderItemQueryDto들을 같은 [OrderId]를 가진 것들로 grouping해서 Map으로 반환
+                        // Map의 key는 orderId가 된다.
+                .collect(Collectors.groupingBy(
+                        orderItemQueryDto -> orderItemQueryDto.getOrderId())
+                );
+
+            result.forEach(o -> o.setOrderItems(map.get(o.getOrderId())));
+
+            //총 2번의 SQL문을 날려서 조회함. ( 다음에는 단 1번의 SQL문으로 이 모든 걸 해결하는 법을 배운다)
+            return result;
+    }
+
+    // 근데, 이런 생각이 들 수도 있다.
+    // JPQL로 NEW연산자를 통해 직접 DTO로 변환하는 게 마냥 편하지는 않다는 생각!!!
+    // 지금 여태껏 되게 많은 쿼리를 직접 작성하고 있었다. ㅠㅠ
 
 }

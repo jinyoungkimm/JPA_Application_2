@@ -106,6 +106,15 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
     }
 
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5() { // V4에서 발생한 ( 1 + N ) 문제를 해결!
+
+
+        return orderQueryRepository.findAllByDto_optimization();
+
+
+    }
+
 
     @Data
     static class OrderDto { // API의 결과 스펙
