@@ -119,8 +119,25 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
         List<Order> orders = orderRepository.findAllWithItem(); // fetch join을 사용하여 새로 정의한 메서드
 
-        List<OrderDto> result = orders.stream()
+       List<OrderDto> result = orders.stream()
 
+                .map(o->new OrderDto(o))
+                .collect(Collectors.toList());
+
+        return result;
+
+    }
+
+    @GetMapping("/api/v3.1/orders")
+    public List<OrderDto> ordersV3_1() { // [1:다] 에서 다(컬렉션) fetch join 시, 생기는 페이지 이슈를 해결
+
+        List<Order> orders = orderRepository.findAllWithMemberDelivery(); // @~ToOne 관계의 객체만 존재
+        //이거에 대해서, 페이징을 하여도 성능 이슈가 안 생김
+        // 왜냐하면, [1:다] 관계에서와는 달리, DB에서 페이징 처리를 해서 가져오기 때문([데이터 중복]이 없기 때문)!
+
+        //여기서 Order 객체를 다른 객체(OrderItem, Item)에 대한 조회가 일어나는데
+        // Lazy인 관계로 (N+1) 문제 발생생
+       List<OrderDto> result = orders.stream()
                 .map(o->new OrderDto(o))
                 .collect(Collectors.toList());
 
