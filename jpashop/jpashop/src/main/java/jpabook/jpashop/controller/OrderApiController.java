@@ -8,11 +8,11 @@ import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
 import jpabook.jpashop.repository.order.query.OrderFlatDto;
+import jpabook.jpashop.repository.order.query.OrderItemQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +21,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -75,7 +76,7 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
        List<OrderDto> result = orders.stream()
                 .map(o->new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         return result;
 
@@ -92,7 +93,7 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
        List<OrderDto> result = orders.stream()
                 .map(o->new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         return result;
 
@@ -116,10 +117,31 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
     }
 
+//    @GetMapping("/api/v6/orders")
+//    public List<OrderQueryDto> ordersV6() { // V5에서는 총 2번의 SQL문으로 완성하였지만, 여기서는
+//                                            // 단 1번의 SQL문으로 같은 결과를 내 보겠다.
+//        return orderQueryRepository.findAllByDto_flat();
+//
+//    }
+
+    // 만약 API 결과 스펙이 OrderQueryDto가 아니라, OrderQueryDto로 보내야 한다면??
+    // ROOP를 돌려서 일일히 OrderQueryDto를 OrderQueryDto로 변환해 주면 된다.
     @GetMapping("/api/v6/orders")
-    public List<OrderFlatDto> ordersV6() { // V5에서는 총 2번의 SQL문으로 완성하였지만, 여기서는
-                                            // 단 1번의 SQL문으로 같은 결과를 내 보겠다.
-        return orderQueryRepository.findAllByDto_flat();
+    public List<OrderQueryDto> ordersV6() {
+
+        List<OrderFlatDto> flats = orderQueryRepository.findAllByDto_flat();
+
+        return flats.stream()
+                .collect(groupingBy(o -> new OrderQueryDto(o.getOrderId(),
+                                o.getName(), o.getOrderDate(), o.getOrderStatus(), o.getAddress()),
+                       mapping(o -> new OrderItemQueryDto(o.getOrderId(),
+                                o.getItemName(), o.getOrderPrice(), o.getCount()), toList())
+                )).entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(),
+                        e.getKey().getName(), e.getKey().getOrderDate(), e.getKey().getOrderStatus(),
+                        e.getKey().getAddress(), e.getValue()))
+                .collect(toList());
+
 
     }
 
