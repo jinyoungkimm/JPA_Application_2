@@ -51,9 +51,6 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
 
             List<OrderItem> orderItems = order.getOrderItems();
 
-//            for (OrderItem orderItem : orderItems) {
-//                orderItem.getItem().getName(); // Lazy 객체 강제 초기화
-//            }
             orderItems.stream().forEach(o->o.getItem().getName()); // 위 for문을 Lamda식으로 변경
         }
 
@@ -65,11 +62,7 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
     public List<OrderDto> ordersV2(){ //[도메인 엔티티]를 DTO로 [한 번] 감싸서 전달.
 
         List<Order> orders = orderRepository.findAllByString(new OrderSearch());
-        // Lazy 객체 강제 초기화는 OrderDto 클래스에서 구현해 놓음.
-        // 이 반복문을 통해 그 구현이 실행됨으로서 초기화가 일어남.
-        // 이 시점에는 아직 orderRepository에서 OrderItem, Item에 대한 fetch Join JPQL이 없으므로,
-        // 아래 람다에서 반복문이 일어 날때마다 조회하는 SQL문이 날라간다.(N+1문제 V3에서 Fetch Join으로 최적화 할 예정)
-        // 그러나, 컬렉션을 fetch join할 때 주의해야 할 부분이 있다고 말씀하심(추후에 설명 예정이라고 함)
+
         List<OrderDto> all = orders.stream()
                 .map(o -> new OrderDto(o))
                 .collect(toList());
@@ -87,14 +80,6 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
         private OrderStatus orderStatus;
         private Address address;
 
-        // private List<OrderItem> orderItems; // OrderItem는 [도메인 엔티티]이다.
-        // 우리는 [도메인 엔티티]를 직접 전달하지 않기 위헤서, DTO로 [한 번] 감싸서 보내면 괜찮겠지 싶어서 보냈지만,
-        // DTO 안에서 조차, [도메인 엔티티]가 있으면 안된다(이를 "DTO가 [도메인 엔티티]에 의존하고 있다"라고 표현)
-        // 전달하는 DTO에서 조차, [도메인 엔티티]를 의존하고 있으면 안된다.
-        // 왜냐하면, 클라이언트에게 이 DTO가 뿌려지게 되면, OrderItem [도메인 엔티티]가 그대로 노출되기 때문.
-        // 결론 : 전달되는 DTO는 그 어떠한 [도메인 엔티티]도 의존하고 있으면 안된다.
-        // [도메인 엔티티]에 대한 의존이 없어지도록, 해당 [도메인 엔티티]를 별도의 DTO를 생성해서, 다시 한번
-        // 감싸서 보내야 함.(OrderItem을 OrderItemDto 클래스로 Wrapping 하자)
         private List<OrderItemDto> orderItems;// OrderItemDto : 아래에 구현함
         public OrderDto(Order order) {
 
@@ -128,5 +113,18 @@ public class OrderApiController { //[주문 내역]에서 주문한 [상품 정�
         }
     }
 
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> ordersV3() { // V2에서 생겼던, (N+1)문제를 FETCH JOIN으로 해결!!
+                                       // 컬렉션 사용 시, 생기는 [데이터 중복]문제도 해결함
 
+        List<Order> orders = orderRepository.findAllWithItem(); // fetch join을 사용하여 새로 정의한 메서드
+
+        List<OrderDto> result = orders.stream()
+
+                .map(o->new OrderDto(o))
+                .collect(Collectors.toList());
+
+        return result;
+
+    }
 }
